@@ -1,0 +1,84 @@
+apply plugin: 'com.android.library'
+apply plugin: 'com.jfrog.bintray'
+apply plugin: 'com.github.dcendents.android-maven'
+
+group = 'com.jobernolte.android'
+version = '1.0.0'
+archivesBaseName = "slf4j-android-impl"
+
+Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+
+bintray {
+    user = properties.getProperty("bintray.user")
+    key = properties.getProperty("bintray.apikey")
+    pkg {
+        repo = 'com.jobernolte.android'
+        name = 'slf4j-android-impl'
+
+        version {
+            name = '1.0.0'
+            desc = 'First upload'
+            released = new Date()
+            vcsTag = '1.0.0'
+        }
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/jobernolte/slf4j-android-impl.git'
+        websiteUrl = 'https://github.com/jobernolte/slf4j-android-impl'
+    }
+    configurations = ['archives']
+}
+
+android {
+    compileSdkVersion project.ext.targetSdkVersion
+    buildToolsVersion project.ext.buildToolsVersion
+    defaultConfig {
+        minSdkVersion project.ext.minSdkVersion
+        targetSdkVersion project.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    productFlavors {
+    }
+}
+
+dependencies {
+    implementation "org.slf4j:slf4j-api:${slf4j_version}"
+    testImplementation "junit:junit:${junit_version}"
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
+
+task generateSourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier 'sources'
+}
+
+task generateJavadocs(type: Javadoc) {
+    doFirst {
+        android.libraryVariants.all {
+            variant ->
+                classpath += project.files(variant.compileConfiguration.join(File.pathSeparator))
+        }
+    }
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.bootClasspath.join(File.pathSeparator))
+}
+
+task generateJavadocsJar(type: Jar) {
+    dependsOn = ["generateJavadocs"]
+    from generateJavadocs.destinationDir
+    classifier 'javadoc'
+}
+
+artifacts {
+    archives generateJavadocsJar
+    archives generateSourcesJar
+}
